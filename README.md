@@ -2,6 +2,9 @@
 
 
 
+
+### Live Preview:https://ahmedsa19980.github.io/Currency-Converter-/
+
  Currency Converter with Live Rates, 30-Day History Chart, and Safe Request Handling (Frankfurter API)
  
 🗝️ Introduction Currency conversion is a common real-world feature in finance apps, travel tools, e-commerce, and dashboards.
