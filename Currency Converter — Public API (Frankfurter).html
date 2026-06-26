@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- ✅ Character encoding so text renders correctly -->
+    <meta charset="utf-8" />
+
+    <!-- ✅ Responsive page on mobile/tablet (scales correctly) -->
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- ✅ Browser tab title -->
+    <title>Currency Converter — Public API (Frankfurter)</title>
+    <link rel="stylesheet" href="./main.css" />
+   
+  </head>
+
+  <body>
+    <div class="app">
+      <div class="card">
+        <!--──────────────────────────────────────────────
+      │ Code Overview
+      │ Purpose        → Currency converter + 30-day history (no API key)
+      │ Layout         → UI refs → apiFetchJson() → loadCurrencies() → run() → history() → drawChart()
+      │ Use Cases      → fetch + async/await + response.ok + AbortController + UI state
+      │ Key Properties → Frankfurter: /v1/currencies, /v1/latest, /v1/{start}.. time-series
+      └──────────────────────────────────────────────-->
+
+        <h1>Currency Converter (Public API)</h1>
+        <div class="muted">
+          Uses Frankfurter (ECB daily reference rates). No API key needed.
+        </div>
+
+        <!-- ✅ Quick action buttons -->
+        <div class="row" style="margin-top: 12px">
+          <button class="secondary" id="btnSwap">Swap</button>
+          <button class="secondary" id="btnUseUSDJOD">USD → JOD</button>
+          <button class="secondary" id="btnUseEURUSD">EUR → USD</button>
+        </div>
+
+        <!-- ✅ Loading indicator -->
+        <div class="status muted" id="loading">
+          <div class="spinner"></div>
+          <div>Loading…</div>
+        </div>
+
+        <!-- ✅ Error message area -->
+        <div class="error" id="error"></div>
+
+        <!-- ✅ Main content (hidden until currencies load) -->
+        <div class="grid" id="content" style="display: none">
+          <!-- LEFT: Converter -->
+          <section class="card">
+            <strong>Convert</strong>
+
+            <label for="amount">Amount</label>
+            <input id="amount" type="number" min="0" step="0.01" value="100" />
+
+            <div class="row">
+              <div style="flex: 1">
+                <label for="from">From</label>
+                <select id="from"></select>
+              </div>
+              <div style="flex: 1">
+                <label for="to">To</label>
+                <select id="to"></select>
+              </div>
+            </div>
+
+            <div
+              class="row"
+              style="justify-content: flex-end; margin-top: 12px"
+            >
+              <button id="btnConvert">Convert</button>
+            </div>
+
+            <!-- ✅ Conversion results -->
+            <div class="big" id="result">—</div>
+            <div class="muted" id="meta">—</div>
+
+            <div style="margin-top: 8px">
+              <span class="pill" id="ratePill">Rate: —</span>
+              <span class="pill" id="datePill">Date: —</span>
+            </div>
+          </section>
+
+          <!-- RIGHT: History -->
+          <section class="card">
+            <strong>Last 30 Days (Rate History)</strong>
+            <div class="muted" style="margin-top: 6px">
+              Shows how 1 “From” currency changed against “To”.
+            </div>
+
+            <!-- ✅ Simple chart (Canvas) -->
+            <div style="margin-top: 10px">
+              <canvas id="chart" width="900" height="260"></canvas>
+            </div>
+
+            <!-- ✅ History table (last ~12 rows shown) -->
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Rate</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <script defer type="module"  src="./main.js">
+     
+    </script>
+  </body>
+</html>
