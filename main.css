@@ -1,0 +1,227 @@
+/* =========================================================
+         ✅ Code Overview (Beginner Friendly)
+         ---------------------------------------------------------
+         ✅ Purpose:
+            - Convert between currencies using a FREE public API (no API key)
+            - Show:
+              1️⃣ conversion result for a chosen amount
+              2️⃣ last 30-day exchange-rate history (chart + table)
+
+         ✅ Flow (High Level):
+            1️⃣ Load supported currencies → fill dropdowns
+            2️⃣ User chooses amount + from/to currencies
+            3️⃣ Convert using /latest
+            4️⃣ Load last 30 days using time-series endpoint
+            5️⃣ Draw a simple line chart (Canvas) + render last table rows
+
+         ✅ Key Concepts:
+            - fetch() + async/await
+            - response.ok check (HTTP error handling)
+            - AbortController (cancel old requests when user clicks quickly)
+            - UI state (loading spinner + error + main content)
+            - Canvas drawing (no libraries)
+         ========================================================= */
+
+      /* ✅ Helps browser choose dark-looking default controls */
+      :root {
+        color-scheme: dark;
+      }
+
+      /* ✅ Make width/height calculations predictable */
+      * {
+        box-sizing: border-box;
+      }
+
+      /* ✅ Page background + default font */
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        background: #0b1020;
+        color: #e9eefc;
+      }
+
+      /* ✅ Center the app and limit its maximum width */
+      .app {
+        max-width: 1050px;
+        margin: 0 auto;
+      }
+
+      /* ✅ Card container style (reused in UI blocks) */
+      .card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      /* ✅ Page title */
+      h1 {
+        font-size: 18px;
+        margin: 0 0 10px;
+      }
+
+      /* ✅ Slightly faded text (helper class) */
+      .muted {
+        opacity: 0.75;
+      }
+
+      /* ✅ Horizontal row layout for buttons and small groups */
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      /* ✅ Two-column layout: left converter / right history */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      /* ✅ On small screens: stack vertically */
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ✅ Inputs and dropdowns styling */
+      input,
+      select {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: #e9eefc;
+        border-radius: 12px;
+        padding: 10px 12px;
+        outline: none;
+        min-width: 180px;
+      }
+
+      /* ✅ Field labels */
+      label {
+        font-size: 12px;
+        opacity: 0.85;
+        display: block;
+        margin: 10px 0 6px;
+      }
+
+      /* ✅ Primary button */
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        cursor: pointer;
+        background: #4f7cff;
+        color: white;
+        font-weight: 800;
+      }
+
+      /* ✅ Secondary button (less emphasis) */
+      button.secondary {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      /* ✅ Disabled buttons look inactive */
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      /* ✅ Loading area (spinner + text) hidden by default */
+      .status {
+        margin-top: 10px;
+        display: none; /* ✅ shown only while loading */
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* ✅ Small spinner circle */
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-top-color: white; /* ✅ visible rotating top */
+        animation: spin 0.85s linear infinite;
+      }
+
+      /* ✅ Animation definition for spinner */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ✅ Error box hidden by default (shown only when needed) */
+      .error {
+        display: none;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 79, 109, 0.45);
+        background: rgba(255, 79, 109, 0.12);
+      }
+
+      /* ✅ Big conversion result */
+      .big {
+        font-size: 38px;
+        font-weight: 950;
+        line-height: 1.1;
+        margin: 8px 0 6px;
+      }
+
+      /* ✅ Small pills (rate + date badges) */
+      .pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        margin-right: 6px;
+        margin-top: 6px;
+      }
+
+      /* ✅ Canvas container (for the line chart) */
+      canvas {
+        width: 100%;
+        height: 220px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        display: block;
+      }
+
+      /* ✅ History table style */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 10px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      th {
+        opacity: 0.85;
+        font-weight: 900;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+    }
